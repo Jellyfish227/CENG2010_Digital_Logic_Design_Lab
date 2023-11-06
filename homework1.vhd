@@ -1,6 +1,6 @@
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
-use IEEE.std_logic_unsigned.all;
+use IEEE.NUMERIC_STD.ALL; 
 -- use IEEE.NUMERIC_STD.all;
 
 entity q1 is
@@ -14,35 +14,52 @@ end q1;
 
 architecture Behavioral of q1 is
 
-signal displayed_number: STD_LOGIC_VECTOR (15 downto 0);
--- counting decimal number to be displayed on 4-digit 7-segment display
-signal LED_BCD: STD_LOGIC_VECTOR (3 downto 0);
-signal refresh_counter: STD_LOGIC_VECTOR (19 downto 0);
--- creating 10.5ms refresh period
-signal LED_activating_counter: std_logic_vector(1 downto 0);
--- the other 2-bit for creating 4 LED-activating signals
--- count         0    ->  1  ->  2  ->  3
--- activates    LED1    LED2   LED3   LED4
--- and repeat
-signal rst : STD_LOGIC;
-signal first_digit : STD_LOGIC_VECTOR(3 downto 0) := "0111";
-signal second_digit : STD_LOGIC_VECTOR(3 downto 0) := "1000";
-signal third_digit : STD_LOGIC_VECTOR(3 downto 0) := "1001";
-signal fourth_digit : STD_LOGIC_VECTOR(3 downto 0) := "1010";
-signal state : STD_LOGIC_VECTOR(1 downto 0) := "00";
+    signal displayed_number: STD_LOGIC_VECTOR (15 downto 0);
+    -- counting decimal number to be displayed on 4-digit 7-segment display
+    signal LED_BCD: STD_LOGIC_VECTOR (3 downto 0);
+    signal refresh_counter: STD_LOGIC_VECTOR (19 downto 0);
+    -- creating 10.5ms refresh period
+    signal LED_activating_counter: std_logic_vector(1 downto 0);
+    -- the other 2-bit for creating 4 LED-activating signals
+    -- count         0    ->  1  ->  2  ->  3
+    -- activates    LED1    LED2   LED3   LED4
+    -- and repeat
+    signal rst : STD_LOGIC;
+    signal first : STD_LOGIC_VECTOR(3 downto 0) := "0111";
+    signal second : STD_LOGIC_VECTOR(3 downto 0) := "1000";
+    signal third : STD_LOGIC_VECTOR(3 downto 0) := "1001";
+    signal fourth : STD_LOGIC_VECTOR(3 downto 0) := "1010";
+    signal temp : STD_LOGIC_VECTOR(3 downto 0);
+    signal stateCounter : signed integer --TODO: progress upto
+
+    type state_type is (S0, S1, S2, S3);
+    signal previous_state, current_state, next_state : state_type;
 
 begin
 
 rst <= btnC;
 
-OUTPUT_DETERMINE : process(state)
-begin
-    if (state = "00") 
+    -- STATE_CTRL : process (rst, btnL, btnR)
+    -- begin
+	--     if (rst = '1') then
+	--         state <= S0;
+    --         refresh_counter <= (others => '0');
+	--     elsif rising_edge(btnL) then --rotate left
+	--         if (S0) then
+    --             state <= S3;
+    --         elsif (S3) then
+    --             state <= S2;
+    --         elsif (S2) then
+    --             state <= S1;
+    --         elsif (S1) then
+    --             state <= S0;
+	--         end if;
+    --     elsif rising_
+    -- end process; 
 
-end process;
 -- VHDL code for BCD to 7-segment decoder
 -- Cathode patterns of the 7-segment LED display 
-process(LED_BCD)
+SEG_MAPPING : process(LED_BCD)
 begin
     case LED_BCD is
         when "0000" => seg <= "1000000"; -- "0"     
@@ -66,17 +83,14 @@ end process;
 
 -- 7-segment display controller
 -- generate refresh period of 10.5ms
-process(clk,rst)
+REFRESH_MECH : process(clk)
 begin 
-    if(rst='1') then
-        displayed_number <= "0111100010010000";
-        refresh_counter <= (others => '0');
-    elsif(rising_edge(clk)) then
+    if(rising_edge(clk)) then
         refresh_counter <= refresh_counter + 1;
     end if;
 end process;
 
- LED_activating_counter <= refresh_counter(19 downto 18);
+LED_activating_counter <= refresh_counter(19 downto 18);
 -- 4-to-1 MUX to generate anode activating signals for 4 LEDs 
 process(LED_activating_counter)
 begin
@@ -104,7 +118,7 @@ begin
     end case;
 end process;
 
-displayed_number <= first_digit & second_digit & third_digit & fourth_digit;
+-- displayed_number <= first & second & third & fourth;
 
 
 end Behavioral;
