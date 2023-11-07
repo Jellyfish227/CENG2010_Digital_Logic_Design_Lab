@@ -31,93 +31,101 @@ architecture Behavioral of q1 is
     signal temp : STD_LOGIC_VECTOR(3 downto 0);
     signal stateCounter : signed integer --TODO: progress upto
 
-    type state_type is (S0, S1, S2, S3);
-    signal previous_state, current_state, next_state : state_type;
+    -- type state_type is (S0, S1, S2, S3);
+    -- signal previous_state, current_state, next_state : state_type;
 
 begin
 
-rst <= btnC;
+    rst <= btnC;
+    displayed_number <= first & second & third & fourth;
 
-    -- STATE_CTRL : process (rst, btnL, btnR)
-    -- begin
-	--     if (rst = '1') then
-	--         state <= S0;
-    --         refresh_counter <= (others => '0');
-	--     elsif rising_edge(btnL) then --rotate left
-	--         if (S0) then
-    --             state <= S3;
-    --         elsif (S3) then
-    --             state <= S2;
-    --         elsif (S2) then
-    --             state <= S1;
-    --         elsif (S1) then
-    --             state <= S0;
-	--         end if;
-    --     elsif rising_
-    -- end process; 
+    STATE_CTRL : process(rst)
+    begin
+	    if (rst = '1') then
+            first <= "0111";
+            second <= "1000";
+            third <= "1001";
+            fourth <= "1010";
+            refresh_counter <= (others => '0');
+        end if;
+    end process; 
 
--- VHDL code for BCD to 7-segment decoder
--- Cathode patterns of the 7-segment LED display 
-SEG_MAPPING : process(LED_BCD)
-begin
-    case LED_BCD is
-        when "0000" => seg <= "1000000"; -- "0"     
-        when "0001" => seg <= "1111001"; -- "1" 
-        when "0010" => seg <= "0100100"; -- "2" 
-        when "0011" => seg <= "0110000"; -- "3" 
-        when "0100" => seg <= "0011001"; -- "4" 
-        when "0101" => seg <= "0010010"; -- "5" 
-        when "0110" => seg <= "0000010"; -- "6" 
-        when "0111" => seg <= "1111000"; -- "7" 
-        when "1000" => seg <= "0000000"; -- "8"     
-        when "1001" => seg <= "0010000"; -- "9" 
-        when "1010" => seg <= "0100000"; -- a
-        when "1011" => seg <= "0000011"; -- b
-        when "1100" => seg <= "1000110"; -- C
-        when "1101" => seg <= "0100001"; -- d
-        when "1110" => seg <= "0000110"; -- E
-        when "1111" => seg <= "0001110"; -- F
-    end case;
-end process;
+    OUTPUT_CTRL : process(btnL, btnR)
+    begin
+        if (rising_edge(btnL)) then --rotate left
+            temp <= first;
+            first <= second;
+            second <= third;
+            third <= fourth;
+            fourth <= temp;
+        elsif (rising_edge(btnR)) then --rotate right
+            temp <= fourth;
+            fourth <= third;
+            third <= second;
+            second <= first;
+            first <= temp;
+        end if;
+    end process;
 
--- 7-segment display controller
--- generate refresh period of 10.5ms
-REFRESH_MECH : process(clk)
-begin 
-    if(rising_edge(clk)) then
-        refresh_counter <= refresh_counter + 1;
-    end if;
-end process;
+    -- VHDL code for BCD to 7-segment decoder
+    -- Cathode patterns of the 7-segment LED display 
+    SEG_MAPPING : process(LED_BCD)
+    begin
+        case LED_BCD is
+            when "0000" => seg <= "1000000"; -- "0"     
+            when "0001" => seg <= "1111001"; -- "1" 
+            when "0010" => seg <= "0100100"; -- "2" 
+            when "0011" => seg <= "0110000"; -- "3" 
+            when "0100" => seg <= "0011001"; -- "4" 
+            when "0101" => seg <= "0010010"; -- "5" 
+            when "0110" => seg <= "0000010"; -- "6" 
+            when "0111" => seg <= "1111000"; -- "7" 
+            when "1000" => seg <= "0000000"; -- "8"     
+            when "1001" => seg <= "0010000"; -- "9" 
+            when "1010" => seg <= "0100000"; -- a
+            when "1011" => seg <= "0000011"; -- b
+            when "1100" => seg <= "1000110"; -- C
+            when "1101" => seg <= "0100001"; -- d
+            when "1110" => seg <= "0000110"; -- E
+            when "1111" => seg <= "0001110"; -- F
+        end case;
+    end process;
 
-LED_activating_counter <= refresh_counter(19 downto 18);
--- 4-to-1 MUX to generate anode activating signals for 4 LEDs 
-process(LED_activating_counter)
-begin
-    case LED_activating_counter is
-    when "00" =>
-        an <= "0111"; 
-        -- activate LED1 and Deactivate LED2, LED3, LED4
-        LED_BCD <= displayed_number(15 downto 12);
-        -- the first hex digit of the 16-bit number
-    when "01" =>
-        an <= "1011"; 
-        -- activate LED2 and Deactivate LED1, LED3, LED4
-        LED_BCD <= displayed_number(11 downto 8);
-        -- the second hex digit of the 16-bit number
-    when "10" =>
-        an <= "1101"; 
-        -- activate LED3 and Deactivate LED2, LED1, LED4
-        LED_BCD <= displayed_number(7 downto 4);
-        -- the third hex digit of the 16-bit number
-    when "11" =>
-        an <= "1110"; 
-        -- activate LED4 and Deactivate LED2, LED3, LED1
-        LED_BCD <= displayed_number(3 downto 0);
-        -- the fourth hex digit of the 16-bit number    
-    end case;
-end process;
+    -- 7-segment display controller
+    -- generate refresh period of 10.5ms
+    REFRESH_MECH : process(clk)
+    begin 
+        if(rising_edge(clk)) then
+            refresh_counter <= refresh_counter + 1;
+        end if;
+    end process;
 
--- displayed_number <= first & second & third & fourth;
-
+    LED_activating_counter <= refresh_counter(19 downto 18);
+    -- 4-to-1 MUX to generate anode activating signals for 4 LEDs 
+    process(LED_activating_counter)
+    begin
+        case LED_activating_counter is
+        when "00" =>
+            an <= "0111"; 
+            -- activate LED1 and Deactivate LED2, LED3, LED4
+            LED_BCD <= displayed_number(15 downto 12);
+            -- the first hex digit of the 16-bit number
+        when "01" =>
+            an <= "1011"; 
+            -- activate LED2 and Deactivate LED1, LED3, LED4
+            LED_BCD <= displayed_number(11 downto 8);
+            -- the second hex digit of the 16-bit number
+        when "10" =>
+            an <= "1101"; 
+            -- activate LED3 and Deactivate LED2, LED1, LED4
+            LED_BCD <= displayed_number(7 downto 4);
+            -- the third hex digit of the 16-bit number
+        when "11" =>
+            an <= "1110"; 
+            -- activate LED4 and Deactivate LED2, LED3, LED1
+            LED_BCD <= displayed_number(3 downto 0);
+            -- the fourth hex digit of the 16-bit number    
+        end case;
+    end process;
 
 end Behavioral;
