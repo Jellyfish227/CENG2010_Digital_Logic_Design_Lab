@@ -39,7 +39,7 @@ begin
     rst <= btnC;
     displayed_number <= first & second & third & fourth;
 
-    STATE_CTRL : process(rst)
+    RESET_CTRL : process(rst)
     begin
 	    if (rst = '1') then
             first <= "0111";
