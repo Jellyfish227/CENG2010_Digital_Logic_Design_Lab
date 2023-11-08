@@ -30,9 +30,10 @@ architecture Behavioral of q1 is
     signal third : STD_LOGIC_VECTOR(3 downto 0) := "1001";
     signal fourth : STD_LOGIC_VECTOR(3 downto 0) := "1010";
     signal temp : STD_LOGIC_VECTOR(3 downto 0);
+    signal x : STD_LOGIC_VECTOR(1 downto 0);
 
     type state_type is (S0, S1, S2, S3);
-    signal previous_state, state : state_type;
+    signal state, next_state : state_type;
 
 begin
 
@@ -43,10 +44,38 @@ begin
     begin
         if (reset = '1') then
             state <= S0;
-        elsif rising_edge
+        elsif rising_edge(clk) then
+            state <= next_state;
+        end if;
+    end process;
         -- TODO: mealy fsm implementation
 
-
+    OUTPUT_DECODE : process (state, x)
+    begin
+        case (state) is 
+            when (S0) =>
+                first <= "0111";
+                second <= "1000";
+                third <= "1001";
+                fourth <= "0000";
+            when (S1) is
+                first <= "0000";
+                second <= "0111";
+                thirsd <= "1000";
+                fourth <= "1001";
+            when (S2) is 
+                first <= "1001";
+                second <= "0000";
+                third <= "0111";
+                fourth <= "1000";
+            when (S3) is 
+                first <= "1000";
+                second <= "1001";
+                third <= "0000";
+                fourth <= "0111";
+        end case;
+    end process;
+#if 0
     OUTPUT_CTRL : process(btnL, btnR, rst, clk)
     begin
         if (rst = '1') then
@@ -71,7 +100,7 @@ begin
             first <= temp;
         end if;
     end process;
-
+#end if
     -- VHDL code for BCD to 7-segment decoder
     -- Cathode patterns of the 7-segment LED display 
     SEG_MAPPING : process(LED_BCD)
