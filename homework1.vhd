@@ -31,25 +31,39 @@ architecture Behavioral of q1 is
     signal fourth : STD_LOGIC_VECTOR(3 downto 0) := "1010";
     signal temp : STD_LOGIC_VECTOR(3 downto 0);
 
-    -- type state_type is (S0, S1, S2, S3);
-    -- signal previous_state, current_state, next_state : state_type;
+    type state_type is (S0, S1, S2, S3);
+    signal previous_state, state : state_type;
 
 begin
 
     rst <= btnC;
     displayed_number <= first & second & third & fourth;
 
-
-    OUTPUT_CTRL : process(btnL, btnR)
+    SYNC_PROC : process (clk, rst)
     begin
-        if (rising_edge(btnL)) then --rotate left
+        if (reset = '1') then
+            state <= S0;
+        elsif rising_edge
+        -- TODO: mealy fsm implementation
+
+
+    OUTPUT_CTRL : process(btnL, btnR, rst, clk)
+    begin
+        if (rst = '1') then
+            first <= "0111";
+            second <= "1000";
+            third <= "1001";
+            fourth <= "1010";
+            refresh_counter <= (others => '0');
+        end if;
+        if (rising_edge(btnL) and rising_edge(clk)) then --rotate left
             temp <= first;
             first <= second;
             second <= third;
             third <= fourth;
             fourth <= temp;
         end if;
-        if (rising_edge(btnR)) then --rotate right
+        if (rising_edge(btnR) and rising_edge(clk)) then --rotate right
             temp <= fourth;
             fourth <= third;
             third <= second;
@@ -85,14 +99,8 @@ begin
     -- 7-segment display controller
     -- generate refresh period of 10.5ms
     REFRESH_MECH : process(rst,clk)
-    begin 
-        if (rst = '1') then
-            first <= "0111";
-            second <= "1000";
-            third <= "1001";
-            fourth <= "1010";
-            refresh_counter <= (others => '0');
-        elsif(rising_edge(clk)) then
+    begin
+        if(rising_edge(clk)) then
             refresh_counter <= refresh_counter + 1;
         end if;
     end process;
