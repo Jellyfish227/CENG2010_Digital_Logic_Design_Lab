@@ -1,5 +1,6 @@
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
+use IEEE.std_logic_unsigned.all;
 use IEEE.NUMERIC_STD.ALL; 
 
 entity q1 is
@@ -29,7 +30,6 @@ architecture Behavioral of q1 is
     signal third : STD_LOGIC_VECTOR(3 downto 0) := "1001";
     signal fourth : STD_LOGIC_VECTOR(3 downto 0) := "1010";
     signal temp : STD_LOGIC_VECTOR(3 downto 0);
-    signal stateCounter : signed integer --TODO: progress upto
 
     -- type state_type is (S0, S1, S2, S3);
     -- signal previous_state, current_state, next_state : state_type;
@@ -39,16 +39,6 @@ begin
     rst <= btnC;
     displayed_number <= first & second & third & fourth;
 
-    RESET_CTRL : process(rst)
-    begin
-	    if (rst = '1') then
-            first <= "0111";
-            second <= "1000";
-            third <= "1001";
-            fourth <= "1010";
-            refresh_counter <= (others => '0');
-        end if;
-    end process; 
 
     OUTPUT_CTRL : process(btnL, btnR)
     begin
@@ -58,7 +48,8 @@ begin
             second <= third;
             third <= fourth;
             fourth <= temp;
-        elsif (rising_edge(btnR)) then --rotate right
+        end if;
+        if (rising_edge(btnR)) then --rotate right
             temp <= fourth;
             fourth <= third;
             third <= second;
@@ -93,9 +84,15 @@ begin
 
     -- 7-segment display controller
     -- generate refresh period of 10.5ms
-    REFRESH_MECH : process(clk)
+    REFRESH_MECH : process(rst,clk)
     begin 
-        if(rising_edge(clk)) then
+        if (rst = '1') then
+            first <= "0111";
+            second <= "1000";
+            third <= "1001";
+            fourth <= "1010";
+            refresh_counter <= (others => '0');
+        elsif(rising_edge(clk)) then
             refresh_counter <= refresh_counter + 1;
         end if;
     end process;
