@@ -1,3 +1,24 @@
+----------------------------------------------------------------------------------
+-- Company: 
+-- Engineer: 
+-- 
+-- Create Date: 11/08/2023 07:26:25 PM
+-- Design Name: 
+-- Module Name: ceng2010_hw1_q1 - Behavioral
+-- Project Name: 
+-- Target Devices: 
+-- Tool Versions: 
+-- Description: 
+-- 
+-- Dependencies: 
+-- 
+-- Revision:
+-- Revision 0.01 - File Created
+-- Additional Comments:
+-- 
+----------------------------------------------------------------------------------
+
+
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.std_logic_unsigned.all;
@@ -15,26 +36,24 @@ end q1;
 architecture Behavioral of q1 is
 
     signal displayed_number: STD_LOGIC_VECTOR (15 downto 0);
-    -- counting decimal number to be displayed on 4-digit 7-segment display
     signal LED_BCD: STD_LOGIC_VECTOR (3 downto 0);
     signal refresh_counter: STD_LOGIC_VECTOR (19 downto 0);
-    -- creating 10.5ms refresh period
     signal LED_activating_counter: std_logic_vector(1 downto 0);
-    -- the other 2-bit for creating 4 LED-activating signals
-    -- count         0    ->  1  ->  2  ->  3
-    -- activates    LED1    LED2   LED3   LED4
-    -- and repeat
+    
     signal rst : STD_LOGIC;
+
     signal first : STD_LOGIC_VECTOR(3 downto 0) := "0111";
     signal second : STD_LOGIC_VECTOR(3 downto 0) := "1000";
     signal third : STD_LOGIC_VECTOR(3 downto 0) := "1001";
     signal fourth : STD_LOGIC_VECTOR(3 downto 0) := "1010";
     signal temp : STD_LOGIC_VECTOR(3 downto 0);
-    signal x : STD_LOGIC_VECTOR(1 downto 0);
 
-    type state_type is (S0, S1, S2, S3);
-    signal state, next_state : state_type;
+    signal state : integer := 0;
+    signal next_state : integer := 0;
 
+    signal clk2 : STD_LOGIC:= '0';
+    signal swap_counter: integer:= 0;
+    
 begin
 
     rst <= btnC;
@@ -42,65 +61,56 @@ begin
 
     SYNC_PROC : process (clk, rst)
     begin
-        if (reset = '1') then
-            state <= S0;
+        if (rst = '1') then
+            state <= 0;
         elsif rising_edge(clk) then
             state <= next_state;
         end if;
     end process;
-        -- TODO: mealy fsm implementation
 
-    OUTPUT_DECODE : process (state, x)
+    OUTPUT_DECODE : process (state)
     begin
         case (state) is 
-            when (S0) =>
+            when (0) =>
                 first <= "0111";
                 second <= "1000";
                 third <= "1001";
                 fourth <= "0000";
-            when (S1) is
+            when (1) =>
                 first <= "0000";
                 second <= "0111";
-                thirsd <= "1000";
+                third <= "1000";
                 fourth <= "1001";
-            when (S2) is 
+            when (2) =>
                 first <= "1001";
                 second <= "0000";
                 third <= "0111";
                 fourth <= "1000";
-            when (S3) is 
+            when (3) =>
                 first <= "1000";
                 second <= "1001";
                 third <= "0000";
                 fourth <= "0111";
+            when others =>
         end case;
     end process;
-#if 0
-    OUTPUT_CTRL : process(btnL, btnR, rst, clk)
+
+    NEXT_STATE_DECODE : process (btnL, btnR, clk2)
     begin
-        if (rst = '1') then
-            first <= "0111";
-            second <= "1000";
-            third <= "1001";
-            fourth <= "1010";
-            refresh_counter <= (others => '0');
-        end if;
-        if (rising_edge(btnL) and rising_edge(clk)) then --rotate left
-            temp <= first;
-            first <= second;
-            second <= third;
-            third <= fourth;
-            fourth <= temp;
-        end if;
-        if (rising_edge(btnR) and rising_edge(clk)) then --rotate right
-            temp <= fourth;
-            fourth <= third;
-            third <= second;
-            second <= first;
-            first <= temp;
+        next_state <= state;
+        if (rising_edge(clk2)) then
+            if (btnL = '1') then
+                if (state = 0) then
+                    next_state <= 3;
+                else
+                    next_state <= state - 1;
+                end if;
+            elsif (btnR = '1') then
+                next_state <= (state + 1) mod 4;
+            end if;
         end if;
     end process;
-#end if
+
     -- VHDL code for BCD to 7-segment decoder
     -- Cathode patterns of the 7-segment LED display 
     SEG_MAPPING : process(LED_BCD)
@@ -127,10 +137,20 @@ begin
 
     -- 7-segment display controller
     -- generate refresh period of 10.5ms
-    REFRESH_MECH : process(rst,clk)
+    REFRESH_MECH : process(rst,clk,btnL, btnR)
     begin
+        if (rising_edge(btnL) or rising_edge(btnR)) then
+            swap_counter <= 0;
+        end if;
         if(rising_edge(clk)) then
             refresh_counter <= refresh_counter + 1;
+            if (rising_edge(btnL) or rising_edge(btnR)) then
+                swap_counter <= 0;
+            end if;
+            swap_counter <= swap_counter + 1;
+            if ((swap_counter mod 13000000) = 0) then
+                clk2 <= not clk2;
+            end if;
         end if;
     end process;
 
